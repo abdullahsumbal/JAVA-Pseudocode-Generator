@@ -28,6 +28,7 @@ for i in range(0,len(allJavaCode)):
     comments = ""
 
 print allJavaCode
+
 # - check for the opening and closing brackets
 for i in range(0,len(allJavaCode)):
     if allJavaCode[i] == '(':
@@ -96,33 +97,87 @@ def convert(allJavaCode, spaces,method_content):
     raw_method_content = allJavaCode[method_start+1:method_end].strip()
     inst_list = raw_method_content.split(";")
 
-    
+    # - for condition helper vaiables
+    forinit = 0
+    forterm = 0
+    forincr = 0
+    fornum1 =0 
+    fornum2 =0
+    collecting_condition = 0
+    code_collecting = ""
 
     for inst in inst_list:
         inst =  inst.strip()
-        
+
+        # colelcting code
+        if collecting_condition == 1:
+            code_collecting = code_collecting + inst
+            if "}" in inst:
+                collecting_condition = 0
+                print code_collecting
+                
+              
+
+        # - for loop condition
+        if re.split(r'\s\(',inst)[0] == "for" or forinit == 1 or forterm == 1 or forincr == 1 and collecting_condition == 0:
+            forinit = 1
+            
+            if forincr == 1:
+                forint = 0
+                forincr = 0
+                forterm = 0
+                collecting_condition = 0
+                method_content.append("Repeat "+ str(fornum2 - fornum1)+" times")
+                
+                # -  int statment for 
+                if re.split(r'\{',inst):
+                    print re.split(r'\{',inst)[1]
+
+                
+            if forterm == 1:
+                forincr = 1
+                forterm = 0
+                forinit = 0
+                if re.match(r'.*\<\s*\d+',inst):
+                    fornum2 = int(re.split(r'\<',inst)[len(re.split(r'\<',inst))-1])
+                if re.match(r'.*\<\=.*',inst):
+                    fornum2 = int(re.split(r'\<\=',inst)[len(re.split(r'\<\=',inst))-1])+1
+
+
+            if forinit == 1 :
+                forterm = 1
+                forinit = 0
+                forincr = 0
+                if re.match(r'.*\=.*',inst):
+                    fornum1 = int(re.split(r'\=',inst)[len(re.split(r'\=',inst))-1])
+                
+
         # - system.out.print statments
-        if "System.out.print" in inst:
+        if "System.out.print" in inst and collecting_condition == 0:
             print_to_screen = re.findall(r'\".*\"',inst)
             
             print_to_screen[0] = "Print "+ print_to_screen[0]
             method_content.append(print_to_screen[0])
 
+
+
+
         # - int statments
-        if re.split(r'\s',inst)[0] == "int" and "[]" not in inst:
+        if re.split(r'[\s]',inst)[0] == "int" and "[]" not in inst and collecting_condition == 0:
             int_variable_name = re.split(r'\s',inst)[1]
             if "=" in inst:
                 int_value = re.split(r'=',inst)[1].strip()
                 method_content.append(int_variable_name+u" \u2190 "+int_value)
                 
         # - char statement
-        if re.split(r'\s',inst)[0] == "char" and "[]" not in inst:
+        if re.split(r'\s',inst)[0] == "char" and "[]" not in inst and collecting_condition == 0:
             char_variable_name = re.split(r'\s',inst)[1]
             if "=" in inst:
                 char_value = re.split(r'=',inst)[1].strip()
                 method_content.append(char_variable_name+u" \u2190 "+char_value)
 
-        # - 
+
+
 
 method_content = []
 convert(allJavaCode,0,method_content)
